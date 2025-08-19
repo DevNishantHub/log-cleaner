@@ -1,0 +1,8 @@
+---
+- name: Automated Log Cleanup and Service Restart
+  hosts: localhost
+  become: yes
+
+  roles:
+    - log_cleanup
+

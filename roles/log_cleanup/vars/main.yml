@@ -1,0 +1,10 @@
+---
+# Keep logs for how many days before cleanup
+log_retention_days: 7
+
+# Where to archive logs before deletion
+archive_dir: /archive/logs
+
+# Services to restart if logs are cleaned
+services_to_restart:
+  - nginx

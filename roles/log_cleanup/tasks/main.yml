@@ -1,0 +1,39 @@
+---
+- name: Check disk usage
+  ansible.builtin.shell: "df -h / | awk 'NR==2 {print $5}' | sed 's/%//'"
+  register: disk_usage
+  changed_when: false
+
+- name: Warn if disk usage above 80%
+  ansible.builtin.debug:
+    msg: "WARNING: Disk usage is at {{ disk_usage.stdout }}%"
+  when: disk_usage.stdout|int > 80
+
+- name: Find old log files
+  ansible.builtin.find:
+    paths: /var/log
+    age: "{{ log_retention_days }}d"
+    recurse: yes
+  register: old_logs
+
+- name: Ensure archive directory exists
+  ansible.builtin.file:
+    path: "{{ archive_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Archive old log files
+  ansible.builtin.copy:
+    src: "{{ item.path }}"
+    dest: "{{ archive_dir }}/"
+    remote_src: yes
+  with_items: "{{ old_logs.files }}"
+  when: old_logs.matched > 0
+
+- name: Remove old log files
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ old_logs.files }}"
+  when: old_logs.matched > 0
+  notify: restart services
